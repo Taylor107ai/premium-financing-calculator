@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>保費融資演示工具 · 財摯宏耀</title>
+<style>
+  :root{
+    --blue:#146ef5; --blue-dark:#0055d4; --blue-300:#006acc;
+    --ink:#080808; --gray800:#222; --gray700:#363636; --gray500:#5a5a5a;
+    --gray300:#ababab; --border:#d8d8d8; --green:#00a838; --red:#ee1d36;
+    --bg-soft:#f5f7fa; --blue-soft:#eaf1ff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:"Inter","WF Visual Sans Variable","Helvetica Neue",Arial,"PingFang HK","Microsoft JhengHei",sans-serif;
+    color:var(--ink); background:#fff; line-height:1.5; -webkit-font-smoothing:antialiased;
+    padding:32px 24px 64px;
+  }
+  .wrap{max-width:1080px;margin:0 auto}
+  header{margin-bottom:24px}
+  .kicker{font-size:11px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--blue);margin-bottom:6px}
+  h1{font-size:30px;font-weight:600;letter-spacing:-0.4px;line-height:1.1}
+  .sub{color:var(--gray500);font-size:14px;margin-top:6px}
+
+  /* ---- Inputs ---- */
+  .panel{
+    border:1px solid var(--border);border-radius:8px;padding:20px 22px;margin-bottom:20px;
+    box-shadow:rgba(0,0,0,0.04) 0px 30px 18px,rgba(0,0,0,0.08) 0px 13px 13px,rgba(0,0,0,0.09) 0px 3px 7px;
+  }
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:16px}
+  .field label{display:block;font-size:11px;font-weight:600;letter-spacing:0.6px;text-transform:uppercase;color:var(--gray700);margin-bottom:6px}
+  .field select,.field input{
+    width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:4px;
+    font-size:15px;font-family:inherit;color:var(--ink);background:#fff;
+  }
+  .field select:focus,.field input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(20,110,245,.15)}
+  .field .hint{font-size:12px;color:var(--gray300);margin-top:4px}
+  .quick{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+  .quick button{
+    font-family:inherit;font-size:12px;padding:4px 9px;border:1px solid var(--border);
+    background:#fff;border-radius:4px;cursor:pointer;color:var(--gray700)
+  }
+  .quick button:hover{border-color:var(--blue);color:var(--blue)}
+  .quick button.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+  /* ---- per-year rate grid ---- */
+  .rate-section{margin-top:18px;padding-top:16px;border-top:1px solid var(--border)}
+  .rate-section>label{display:block;font-size:11px;font-weight:600;letter-spacing:0.4px;color:var(--gray700);margin-bottom:10px}
+  .rate-section>label b{color:var(--blue)}
+  .rate-grid{display:flex;flex-wrap:wrap;gap:8px}
+  .rcell{display:flex;flex-direction:column;align-items:center;gap:3px}
+  .rcell span{font-size:10px;font-weight:600;color:var(--gray500)}
+  .rcell input{width:58px;padding:7px 6px;border:1px solid var(--border);border-radius:4px;font-size:14px;font-family:inherit;text-align:center;color:var(--ink)}
+  .rcell input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(20,110,245,.15)}
+  .rcell input::placeholder{color:#cfd6e0}
+  .rcell.rest input{width:70px}
+  .rcell.rest span{color:var(--blue)}
+
+  /* ---- Summary stats ---- */
+  .stats{display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:22px}
+  .stat{background:#fff;padding:14px 16px}
+  .stat .l{font-size:11px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;color:var(--gray500)}
+  .stat .v{font-size:20px;font-weight:600;margin-top:4px;letter-spacing:-0.3px}
+  .stat.accent{background:var(--blue-soft)}
+  .stat.accent .v{color:var(--blue-300)}
+
+  /* ---- Table ---- */
+  .tbl-card{border:1px solid var(--border);border-radius:8px;overflow-x:auto;overflow-y:visible}
+  table{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums;min-width:860px}
+  thead th,tbody td{white-space:nowrap}
+  thead th{
+    background:#0d2a52;color:#fff;font-weight:600;font-size:12px;letter-spacing:0.3px;
+    padding:11px 10px;text-align:right;vertical-align:bottom;line-height:1.25
+  }
+  thead th:first-child{text-align:center}
+  thead th small{display:block;font-weight:400;opacity:.75;font-size:10px}
+  tbody td{padding:9px 10px;text-align:right;border-bottom:1px solid #eee}
+  tbody td:first-child{text-align:center;font-weight:600;color:var(--gray800)}
+  tbody tr:hover{background:var(--bg-soft)}
+  tbody tr.milestone{background:#fafcff}
+  tbody tr.milestone td:first-child{color:var(--blue-300)}
+  .age{display:block;font-size:11px;color:var(--gray300);font-weight:400}
+  .pos{color:var(--green);font-weight:600}
+  .neg{color:var(--red)}
+  .muted{color:var(--gray300)}
+  .irr{font-weight:600}
+  .breakeven td{border-top:2px solid var(--blue)}
+
+  /* ---- scenario column groups ---- */
+  thead th.grp-self,thead th.grp-fin{text-align:center;font-size:13px;letter-spacing:0.5px;padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.15)}
+  thead th.grp-self{background:#3d4d6a}
+  thead th.grp-fin{background:#1060c9}
+  thead th.col-self{background:#2b3850}
+  thead th.col-fin{background:#0a4ea8}
+  tbody td.col-self{background:#f4f6f9}
+  tbody td.col-fin{background:var(--blue-soft)}
+
+  /* ---- Chart ---- */
+  .chart-card{border:1px solid var(--border);border-radius:8px;padding:18px 20px 14px;margin-bottom:20px}
+  .chart-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:6px}
+  .chart-title{font-size:16px;font-weight:600;letter-spacing:-0.2px}
+  .legend{display:flex;gap:16px;font-size:13px;color:var(--gray700)}
+  .legend .lg{display:flex;align-items:center;gap:6px}
+  .legend .dot{width:14px;height:3px;border-radius:2px;display:inline-block}
+  .legend .dot.self{background:#9aa6b8}
+  .legend .dot.fin{background:var(--blue)}
+  .chart-wrap{position:relative}
+  #chart{width:100%;height:auto;display:block}
+  .chart-tip{position:absolute;pointer-events:none;display:none;background:#0d2a52;color:#fff;font-size:12px;line-height:1.5;padding:7px 10px;border-radius:6px;box-shadow:0 4px 14px rgba(0,0,0,.18);white-space:nowrap;z-index:5;transform:translate(-50%,-115%)}
+  .chart-tip b{font-weight:600}
+  .chart-tip .ts{color:#9fc0ff}
+  .chart-tip .tf{color:#8effb0}
+  .chart-cap{font-size:11px;color:var(--gray300);margin-top:4px;text-align:right}
+
+  .note{font-size:12px;color:var(--gray500);margin-top:14px;line-height:1.6}
+  .note b{color:var(--gray800)}
+  .btns{margin:18px 0 8px;display:flex;gap:10px}
+  .btns button{font-family:inherit;font-size:14px;font-weight:500;padding:9px 18px;border-radius:4px;cursor:pointer;border:1px solid var(--blue);background:var(--blue);color:#fff;transition:transform .12s}
+  .btns button.ghost{background:#fff;color:var(--blue)}
+  .btns button:hover{transform:translateX(4px)}
+
+  @media print{
+    body{padding:0;font-size:12px}
+    .panel,.btns,.quick{display:none}
+    .stats{box-shadow:none}
+    thead th{background:#0d2a52 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .stat.accent{background:var(--blue-soft) !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    thead th.col-fin,thead th.col-self,thead th.grp-self,thead th.grp-fin{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    tbody td.col-fin{background:var(--blue-soft) !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    tbody td.col-self{background:#f4f6f9 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    #chart,.chart-card{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .chart-card{break-inside:avoid;page-break-inside:avoid}
+    .tbl-card{overflow:visible}
+    table{min-width:0}
+    tbody tr:hover{background:none}
+  }
+  @media(max-width:820px){
+    .grid{grid-template-columns:repeat(2,1fr)}
+    .stats{grid-template-columns:repeat(2,1fr)}
+    table{font-size:12px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="kicker">Premium Financing · 保費融資演示</div>
+    <h1>財摯宏耀保險計劃 · 槓桿回報試算</h1>
+    <div class="sub">擬受保人：女 / 35歲 / 非吸煙 · 整付保費（單一保費）· 退保價值按官方建議書 1,000,000 基準按比例計算</div>
+  </header>
+
+  <!-- INPUTS -->
+  <div class="panel">
+    <div class="grid">
+      <div class="field">
+        <label>保單總額 / 整付保費 (USD)</label>
+        <input id="face" type="number" value="1000000" min="0" step="10000">
+        <div class="quick" id="faceQuick">
+          <button data-v="500000">50萬</button>
+          <button data-v="1000000" class="on">100萬</button>
+          <button data-v="2000000">200萬</button>
+          <button data-v="5000000">500萬</button>
+          <button data-v="10000000">1000萬</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>首期保費（客戶自付 %）</label>
+        <input id="dpct" type="number" value="25" min="0" max="100" step="0.5">
+        <div class="quick" id="dpQuick">
+          <button data-v="10">10%</button>
+          <button data-v="15">15%</button>
+          <button data-v="20">20%</button>
+          <button data-v="25" class="on">25%</button>
+          <button data-v="30">30%</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>行政費 / 手續費（每年 %）</label>
+        <input id="feepct" type="number" value="0" min="0" step="0.01">
+        <div class="hint">每年收，按貸款額計</div>
+      </div>
+      <div class="field">
+        <label>首年優惠（自付）USD</label>
+        <input id="rebateSelf" type="number" value="0" min="0" step="1000">
+        <div class="hint">自付保單嘅首年回贈</div>
+      </div>
+      <div class="field">
+        <label>首年優惠（融資）USD</label>
+        <input id="rebateFin" type="number" value="0" min="0" step="1000">
+        <div class="hint">融資保單嘅首年回贈</div>
+      </div>
+    </div>
+
+    <!-- 逐年利率 -->
+    <div class="rate-section">
+      <label>貸款年利率（%）· 第 1–20 年逐年填，<b>留空跟上一年</b>（例：第1年填 2，2–5 年留空跟 2；第6年填 6…），第 21 年起一格</label>
+      <div class="rate-grid" id="rateGrid"></div>
+    </div>
+  </div>
+
+  <!-- SUMMARY -->
+  <div class="stats">
+    <div class="stat accent"><div class="l">投入本金（兩案相同）</div><div class="v" id="sCap">–</div></div>
+    <div class="stat"><div class="l">自付：控制保單</div><div class="v" id="sSelfP">–</div></div>
+    <div class="stat accent"><div class="l">融資：控制保單</div><div class="v" id="sFinP">–</div></div>
+    <div class="stat"><div class="l">銀行貸款</div><div class="v" id="sLoan">–</div></div>
+    <div class="stat"><div class="l">首年支出（息+行政費）</div><div class="v" id="sInt">–</div></div>
+    <div class="stat"><div class="l">融資回本年期</div><div class="v" id="sBE">–</div></div>
+  </div>
+
+  <div class="btns">
+    <button onclick="window.print()">列印 / 存 PDF</button>
+  </div>
+
+  <!-- CHART -->
+  <div class="chart-card">
+    <div class="chart-head">
+      <div class="chart-title">IRR 對比：全額自付 vs 保費融資</div>
+      <div class="legend">
+        <span class="lg"><i class="dot self"></i>全額自付</span>
+        <span class="lg"><i class="dot fin"></i>保費融資</span>
+      </div>
+    </div>
+    <div class="chart-wrap">
+      <svg id="chart" viewBox="0 0 980 320" preserveAspectRatio="xMidYMid meet"></svg>
+      <div class="chart-tip" id="chartTip"></div>
+    </div>
+    <div class="chart-cap" id="chartCap"></div>
+  </div>
+
+  <!-- TABLE -->
+  <div class="tbl-card">
+    <table>
+      <thead>
+        <tr class="grp-row">
+          <th rowspan="2">保單<br>年度<small>(歲)</small></th>
+          <th colspan="3" class="grp-self">全額自付（本金買細保單）</th>
+          <th colspan="4" class="grp-fin">保費融資（同本金撬大保單）</th>
+        </tr>
+        <tr>
+          <th class="col-self">落袋<small>退保價值</small></th>
+          <th class="col-self">淨賺<small>落袋 − 本金</small></th>
+          <th class="col-self">IRR</th>
+          <th>累計支出<small>息 + 行政費</small></th>
+          <th class="col-fin">落袋<small>退保價值 − 貸款</small></th>
+          <th class="col-fin">淨賺<small>落袋−本金−支出+優惠</small></th>
+          <th class="col-fin">IRR<small>對本金</small></th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+
+  <div class="note">
+    <b>公平基準：兩案投入同一筆本金（＝首期金額）。</b>自付：本金買一張同等大細嘅保單；融資：同一筆本金當首期，撬起 N 倍保單。<b>左灰＝自付，右藍＝融資。</b>「落袋」＝ 該年贖回實收（自付＝細保單退保價值；融資＝大保單退保價值減還清貸款）。「淨賺」＝ 落袋減本金（融資再扣逐年利息＋行政費、加回首年優惠）。<b>IRR</b> ＝ 按本金現金流計嘅年化內部回報率：融資撬大保單故回報放大，但要付利息——<b>當利率升到某水平，融資 IRR 會跌穿自付，即「唔抵做」</b>（睇上圖藍線何時跌穿灰線）。<br>
+    <b>假設：</b>利息及行政費每年期末支付、行政費按貸款額計、貸款本金維持不變、退保價值與保費成正比、利率全期不變、首年優惠於首年一次性回贈。實際融資需視乎銀行批核、利率浮動及保單表現，數字僅供演示參考，並非保證回報，亦非建議書。
+  </div>
+</div>
+
+<script>
+// ---- 財摯宏耀 退保價值（總額 A+B），基準保費 1,000,000，女/35/非吸煙 ----
+// {year, sv}; 歲 = 35 + year
+const BASE_PREM = 1000000;
+const SV = [
+  {y:1, sv:830000},  {y:2, sv:894010},  {y:3, sv:963304},   {y:4, sv:1038769}, {y:5, sv:1120248},
+  {y:6, sv:1196978}, {y:7, sv:1279505}, {y:8, sv:1368119},  {y:9, sv:1462198}, {y:10,sv:1568223},
+  {y:11,sv:1656800}, {y:12,sv:1753230}, {y:13,sv:1865734},  {y:14,sv:1992088}, {y:15,sv:2172402},
+  {y:16,sv:2308513}, {y:17,sv:2465952}, {y:18,sv:2600729},  {y:19,sv:2746074}, {y:20,sv:3002907},
+  {y:21,sv:3177303}, {y:22,sv:3360045}, {y:23,sv:3552145},  {y:24,sv:3759932}, {y:25,sv:4028364},
+  {y:30,sv:5761235},                                        // 65歲
+  {y:35,sv:7808630},  {y:40,sv:10818275}, {y:45,sv:15219990}, // 70/75/80歲
+  {y:50,sv:21887258}, {y:55,sv:31705920}, {y:60,sv:43749839}, // 85/90/95歲
+  {y:65,sv:59941071}, {y:70,sv:82124463}, {y:75,sv:112517631},// 100/105/110歲
+  {y:80,sv:154158906},{y:85,sv:211211062}                     // 115/120歲
+];
+const MILESTONE_AGES = {30:65,35:70,40:75,45:80,50:85,55:90,60:95,65:100,70:105,75:110,80:115,85:120};
+
+const fmt = n => Math.round(n).toLocaleString('en-US');
+const pct = n => (n*100).toFixed(2)+'%';
+function irrCellHtml(r){
+  if(r===null||!isFinite(r)) return '<span class="muted">未回本</span>';
+  if(r<0) return '<span class="neg irr">'+pct(r)+'</span>';
+  return '<span class="pos irr">'+pct(r)+'</span>';
+}
+
+function irr(cfs){
+  // Newton-Raphson（起點 0.1，永遠喺真實 root 附近計，避開長年期 underflow）
+  let r=0.1;
+  for(let k=0;k<80;k++){
+    let npv=0, d=0;
+    for(let i=0;i<cfs.length;i++){
+      const f=Math.pow(1+r,i);
+      npv+=cfs[i]/f;
+      if(i>0) d+=-i*cfs[i]/(f*(1+r));
+    }
+    if(!isFinite(npv)||!isFinite(d)||d===0) break;
+    let rn=r-npv/d;
+    if(!isFinite(rn)) break;
+    if(rn<=-0.95) rn=(r-0.95)/2;      // 阻止跌入 underflow 區
+    if(Math.abs(rn-r)<1e-9){ r=rn; break; }
+    r=rn;
+  }
+  const chk=cfs.reduce((s,c,i)=>s+c/Math.pow(1+r,i),0);
+  if(isFinite(r)&&r>-0.95&&Math.abs(chk)<Math.max(1,Math.abs(cfs[0]))*1e-3) return r;
+  // fallback：安全範圍 (-0.9..1) 粗網格搵 sign change 再二分
+  const f=x=>cfs.reduce((s,c,i)=>s+c/Math.pow(1+x,i),0);
+  let lo=null,hi=null,pf=null;
+  for(let x=-0.9;x<=1.0001;x+=0.01){
+    const v=f(x);
+    if(isFinite(v)){ if(pf!==null&&pf*v<0){lo=x-0.01;hi=x;break;} pf=v; }
+  }
+  if(lo===null) return null;
+  for(let k=0;k<200;k++){ const m=(lo+hi)/2, fm=f(m); if(Math.abs(fm)<1e-4) return m; if(f(lo)*fm<0) hi=m; else lo=m; }
+  return (lo+hi)/2;
+}
+
+let CHART_GEO=null;   // 供滑鼠 hover 用
+function drawChart(series, beYear){
+  const x0=48, x1=960, y0=16, y1=278, VBW=980, VBH=320;
+  const MAXYR=30;                                   // 聚焦首 30 保單年度（35→65 歲）
+  const win = series.filter(d=>d.year<=MAXYR);
+  // y 軸（%）：由 0 開始（負回報貼於底線，唔顯示負值）
+  let maxV=0;
+  win.forEach(d=>{ [d.self,d.fin].forEach(v=>{ if(isFinite(v)) maxV=Math.max(maxV,v*100); }); });
+  const yMax=Math.max(6, Math.ceil((maxV+1)/2)*2);
+  const yMin=0;
+  const gstep = yMax<=8?2:(yMax<=16?4:5);
+  const xAt=yr=> x0 + (yr-1)/(MAXYR-1)*(x1-x0);     // 線性時間軸
+  const yAt=v=>{ const c=Math.max(yMin,Math.min(yMax,v)); return y0 + (yMax-c)/(yMax-yMin)*(y1-y0); };
+  let s='';
+  for(let g=0; g<=yMax+0.01; g+=gstep){
+    const yy=yAt(g);
+    s+='<line x1="'+x0+'" y1="'+yy+'" x2="'+x1+'" y2="'+yy+'" stroke="#eef1f5" stroke-width="1"/>';
+    s+='<text x="'+(x0-8)+'" y="'+(yy+4)+'" text-anchor="end" font-size="11" fill="#9aa6b8">'+g+'%</text>';
+  }
+  if(beYear && beYear<=MAXYR){
+    const bx=xAt(beYear);
+    s+='<line x1="'+bx+'" y1="'+y0+'" x2="'+bx+'" y2="'+y1+'" stroke="#00a838" stroke-width="1" stroke-dasharray="4 3"/>';
+    s+='<text x="'+(bx+5)+'" y="'+(y0+13)+'" font-size="11" fill="#00a838">融資回本 第'+beYear+'年</text>';
+  }
+  [1,5,10,15,20,25,30].forEach(yr=>{ s+='<text x="'+xAt(yr)+'" y="'+(y1+18)+'" text-anchor="middle" font-size="11" fill="#9aa6b8">'+yr+'</text>'; });
+  s+='<text x="'+((x0+x1)/2)+'" y="'+(y1+36)+'" text-anchor="middle" font-size="11" fill="#9aa6b8">保單年度（首 30 年）</text>';
+  function line(key,color,w){
+    let path='', started=false, dots='';
+    win.forEach(d=>{ const v=d[key]; if(isFinite(v)){ const X=xAt(d.year),Y=yAt(v*100); path+=(started?'L':'M')+X+' '+Y+' '; started=true; dots+='<circle cx="'+X+'" cy="'+Y+'" r="2.6" fill="'+color+'"/>'; } });
+    return '<path d="'+path+'" fill="none" stroke="'+color+'" stroke-width="'+w+'" stroke-linejoin="round"/>'+dots;
+  }
+  s+=line('self','#9aa6b8',2.2);
+  s+=line('fin','#146ef5',2.8);
+  // hover guide line（預設收起）
+  s+='<line id="hoverGuide" x1="0" y1="'+y0+'" x2="0" y2="'+y1+'" stroke="#9aa6b8" stroke-width="1" stroke-dasharray="3 3" style="display:none"/>';
+  document.getElementById('chart').innerHTML=s;
+  document.getElementById('chartCap').textContent='藍線（融資）高於灰線（自付）＝融資抵做；加息會壓低藍線，跌穿灰線即「唔抵做」。將滑鼠移到圖上睇每年數字。';
+  // 儲存 hover 幾何
+  CHART_GEO = { VBW, VBH, x0, x1, points: win.map(d=>({ year:d.year, self:d.self, fin:d.fin, xv:xAt(d.year), ysv:yAt((isFinite(d.self)?d.self:0)*100), yfv:yAt((isFinite(d.fin)?d.fin:0)*100) })) };
+}
+
+function setupChartHover(){
+  const svg=document.getElementById('chart'), tip=document.getElementById('chartTip'), guide=()=>document.getElementById('hoverGuide');
+  function pctTxt(v){ return (v===null||!isFinite(v)) ? '—' : (v*100).toFixed(2)+'%'; }
+  svg.addEventListener('mousemove', e=>{
+    if(!CHART_GEO) return;
+    const rect=svg.getBoundingClientRect();
+    const vbX=(e.clientX-rect.left)/rect.width*CHART_GEO.VBW;
+    let best=null, bd=1e9;
+    CHART_GEO.points.forEach(p=>{ const d=Math.abs(p.xv-vbX); if(d<bd){bd=d;best=p;} });
+    if(!best) return;
+    const age=35+best.year;
+    tip.innerHTML='<b>第 '+best.year+' 年（'+age+'歲）</b><br><span class="ts">自付</span> '+pctTxt(best.self)+'<br><span class="tf">融資</span> '+pctTxt(best.fin);
+    tip.style.left=(best.xv/CHART_GEO.VBW*rect.width)+'px';
+    tip.style.top =(Math.min(best.ysv,best.yfv)/CHART_GEO.VBH*rect.height)+'px';
+    tip.style.display='block';
+    const g=guide(); if(g){ const gx=best.xv/CHART_GEO.VBW*CHART_GEO.VBW; g.setAttribute('x1',best.xv); g.setAttribute('x2',best.xv); g.style.display='block'; }
+  });
+  svg.addEventListener('mouseleave', ()=>{ tip.style.display='none'; const g=guide(); if(g) g.style.display='none'; });
+}
+
+const MAXY = 85;
+const RATE_YEARS = 20;
+function buildRateGrid(){
+  const g=document.getElementById('rateGrid');
+  let h='';
+  for(let y=1;y<=RATE_YEARS;y++){
+    h+='<div class="rcell"><span>第'+y+'年</span><input id="ry'+y+'" type="number" min="0" step="0.01" '+(y===1?'value="2"':'placeholder="↳"')+'></div>';
+  }
+  h+='<div class="rcell rest"><span>第'+(RATE_YEARS+1)+'年起</span><input id="rateRest" type="number" min="0" step="0.01" placeholder="↳"></div>';
+  g.innerHTML=h;
+  g.querySelectorAll('input').forEach(el=>el.addEventListener('input',calc));
+}
+function getRates(){            // 逐年利率（留空跟上一年）+ 前綴和
+  let last=0.02;
+  const arr=new Array(MAXY+1).fill(0);
+  for(let y=1;y<=RATE_YEARS;y++){
+    const el=document.getElementById('ry'+y), v=el?el.value:'';
+    if(v!=='' && !isNaN(+v)) last=(+v)/100;
+    arr[y]=last;
+  }
+  const rEl=document.getElementById('rateRest'), rv=rEl?rEl.value:'';
+  const restRate=(rv!=='' && !isNaN(+rv))?(+rv)/100:last;
+  for(let y=RATE_YEARS+1;y<=MAXY;y++) arr[y]=restRate;
+  const pre=new Array(MAXY+1).fill(0);
+  for(let y=1;y<=MAXY;y++) pre[y]=pre[y-1]+arr[y];
+  return {arr, pre};
+}
+
+function calc(){
+  const prem = +document.getElementById('face').value || 0;
+  const dpct = (+document.getElementById('dpct').value)/100;
+  const feePct = (+document.getElementById('feepct').value)/100;   // 行政費：每年，按貸款額
+  const rebateSelf = +document.getElementById('rebateSelf').value || 0;  // 自付首年優惠
+  const rebateFin  = +document.getElementById('rebateFin').value  || 0;  // 融資首年優惠
+  const RT = getRates();        // 逐年利率
+
+  const scale   = prem / BASE_PREM;
+  const down    = prem * dpct;          // 客戶自付首期
+  const loan    = prem - down;          // 銀行貸款
+  const yrAdmin = loan * feePct;        // 每年行政費（固定）
+
+  const lev = dpct>0 ? (1/dpct) : 0;    // 槓桿倍數
+  const yr1Cost = loan*RT.arr[1] + yrAdmin;
+  document.getElementById('sCap').textContent   = '$'+fmt(down);
+  document.getElementById('sSelfP').textContent = '$'+fmt(down);
+  document.getElementById('sFinP').textContent  = '$'+fmt(prem)+'（'+lev.toFixed(1)+'×）';
+  document.getElementById('sLoan').textContent  = '$'+fmt(loan);
+  document.getElementById('sInt').textContent   = '$'+fmt(yr1Cost)+' /首年';
+
+  const tb = document.getElementById('tbody');
+  tb.innerHTML='';
+  let breakevenYear = null;
+  const series = [];
+
+  SV.forEach(row=>{
+    const y = row.y;
+    const sv = row.sv * scale;
+    const cumCost = loan*RT.pre[y] + yrAdmin*y;  // 累計支出（逐年息之和 + 行政費）
+    const netAfterLoan = sv - loan;            // 扣貸款後實收
+    const netProfit = netAfterLoan - down - cumCost + rebateFin; // 扣息費後淨賺（計入融資優惠）
+
+    // IRR：t=0 投入 (down) 並扣回融資優惠；y=1..y 逐年付息(可變)+行政費；第 y 年期末贖回收 netAfterLoan
+    const cfs = new Array(y+1).fill(0);
+    cfs[0] = -(down) + rebateFin;
+    for(let i=1;i<=y;i++) cfs[i] = -(loan*RT.arr[i] + yrAdmin);
+    cfs[y] += netAfterLoan;
+    const r = irr(cfs);
+
+    if(breakevenYear===null && netProfit>0) breakevenYear = y;
+
+    const tr=document.createElement('tr');
+    const isMile = !!MILESTONE_AGES[y];
+    if(isMile) tr.className='milestone';
+    if(breakevenYear===y) tr.classList.add('breakeven');
+
+    const age = MILESTONE_AGES[y] || (35+y);
+    const profCls = netProfit>=0 ? 'pos' : 'neg';
+    // 全額自付（同樣本金 down，買一張 down 大細嘅保單；首年優惠減低本金）
+    const selfSV     = sv * dpct;                  // 自付保單退保價值（細保單）
+    const selfCap    = down - rebateSelf;          // 自付實際投入（扣首年優惠）
+    const selfProfit = selfSV - selfCap;           // 自付淨賺
+    const selfIRR    = (selfCap>0 && selfSV>0) ? Math.pow(selfSV/selfCap, 1/y)-1 : null;
+    const selfPCls   = selfProfit>=0 ? 'pos' : 'neg';
+
+    series.push({year:y, self:selfIRR, fin:r});
+
+    tr.innerHTML =
+      '<td>'+y+'<span class="age">'+age+'歲</span></td>'+
+      // 全額自付（本金買細保單）
+      '<td class="col-self">'+fmt(selfSV)+'</td>'+
+      '<td class="col-self '+selfPCls+'">'+(selfProfit>=0?'+':'')+fmt(selfProfit)+'</td>'+
+      '<td class="col-self">'+irrCellHtml(selfIRR)+'</td>'+
+      // 保費融資（同本金撬大保單）
+      '<td class="muted">'+fmt(cumCost)+'</td>'+
+      '<td class="col-fin">'+fmt(netAfterLoan)+'</td>'+
+      '<td class="col-fin '+profCls+'">'+(netProfit>=0?'+':'')+fmt(netProfit)+'</td>'+
+      '<td class="col-fin">'+irrCellHtml(r)+'</td>';
+    tb.appendChild(tr);
+  });
+
+  drawChart(series, breakevenYear);
+
+  document.getElementById('sBE').textContent = breakevenYear ? ('第 '+breakevenYear+' 年') : '—';
+}
+
+// 保單總額 preset chips
+document.querySelectorAll('#faceQuick button').forEach(b=>{
+  b.addEventListener('click',()=>{
+    document.getElementById('face').value=b.dataset.v;
+    document.querySelectorAll('#faceQuick button').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');
+    calc();
+  });
+});
+// 首期 % chips
+document.querySelectorAll('#dpQuick button').forEach(b=>{
+  b.addEventListener('click',()=>{
+    document.getElementById('dpct').value=b.dataset.v;
+    document.querySelectorAll('#dpQuick button').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');
+    calc();
+  });
+});
+['face','dpct','feepct','rebateSelf','rebateFin'].forEach(id=>{
+  document.getElementById(id).addEventListener('input',()=>{
+    if(id==='dpct') document.querySelectorAll('#dpQuick button').forEach(x=>x.classList.toggle('on',x.dataset.v===document.getElementById('dpct').value));
+    if(id==='face') document.querySelectorAll('#faceQuick button').forEach(x=>x.classList.toggle('on',x.dataset.v===document.getElementById('face').value));
+    calc();
+  });
+});
+buildRateGrid();
+calc();
+setupChartHover();
+</script>
+</body>
+</html>
