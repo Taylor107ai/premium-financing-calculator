@@ -28,7 +28,7 @@
     border:1px solid var(--border);border-radius:8px;padding:20px 22px;margin-bottom:20px;
     box-shadow:rgba(0,0,0,0.04) 0px 30px 18px,rgba(0,0,0,0.08) 0px 13px 13px,rgba(0,0,0,0.09) 0px 3px 7px;
   }
-  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:16px}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px 20px;align-items:start}
   .field label{display:block;font-size:11px;font-weight:600;letter-spacing:0.6px;text-transform:uppercase;color:var(--gray700);margin-bottom:6px}
   .field select,.field input{
     width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:4px;
@@ -44,7 +44,9 @@
   .quick button:hover{border-color:var(--blue);color:var(--blue)}
   .quick button.on{background:var(--blue);color:#fff;border-color:var(--blue)}
   /* ---- per-year rate grid ---- */
-  .rate-section{margin-top:18px;padding-top:16px;border-top:1px solid var(--border)}
+  .rate-toggle{margin-top:14px;font-family:inherit;font-size:13px;font-weight:500;color:var(--blue);background:none;border:none;cursor:pointer;padding:2px 0}
+  .rate-toggle:hover{text-decoration:underline}
+  .rate-section{margin-top:12px;padding-top:14px;border-top:1px solid var(--border)}
   .rate-section>label{display:block;font-size:11px;font-weight:600;letter-spacing:0.4px;color:var(--gray700);margin-bottom:10px}
   .rate-section>label b{color:var(--blue)}
   .rate-grid{display:flex;flex-wrap:wrap;gap:8px}
@@ -66,7 +68,7 @@
 
   /* ---- Table ---- */
   .tbl-card{border:1px solid var(--border);border-radius:8px;overflow-x:auto;overflow-y:visible}
-  table{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums;min-width:860px}
+  table{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums;min-width:960px}
   thead th,tbody td{white-space:nowrap}
   thead th{
     background:#0d2a52;color:#fff;font-weight:600;font-size:12px;letter-spacing:0.3px;
@@ -108,8 +110,12 @@
   #chart{width:100%;height:auto;display:block}
   .chart-tip{position:absolute;pointer-events:none;display:none;background:#0d2a52;color:#fff;font-size:12px;line-height:1.5;padding:7px 10px;border-radius:6px;box-shadow:0 4px 14px rgba(0,0,0,.18);white-space:nowrap;z-index:5;transform:translate(-50%,-115%)}
   .chart-tip b{font-weight:600}
-  .chart-tip .ts{color:#9fc0ff}
-  .chart-tip .tf{color:#8effb0}
+  .chart-tip .row{display:flex;align-items:center;gap:6px}
+  .chart-tip .row i{width:10px;height:3px;border-radius:2px;display:inline-block}
+  .chart-tip .ts{color:#c9d2dd}            /* 自付＝灰，跟灰線 */
+  .chart-tip .ts i{background:#9aa6b8}
+  .chart-tip .tf{color:#6fa8ff}            /* 融資＝藍，跟藍線 */
+  .chart-tip .tf i{background:#146ef5}
   .chart-cap{font-size:11px;color:var(--gray300);margin-top:4px;text-align:right}
 
   .note{font-size:12px;color:var(--gray500);margin-top:14px;line-height:1.6}
@@ -146,7 +152,6 @@
   <header>
     <div class="kicker">Premium Financing · 保費融資演示</div>
     <h1>財摯宏耀保險計劃 · 槓桿回報試算</h1>
-    <div class="sub">擬受保人：女 / 35歲 / 非吸煙 · 整付保費（單一保費）· 退保價值按官方建議書 1,000,000 基準按比例計算</div>
   </header>
 
   <!-- INPUTS -->
@@ -175,6 +180,11 @@
         </div>
       </div>
       <div class="field">
+        <label>貸款年利率 (%)　自由輸入</label>
+        <input id="rate" type="number" value="2" min="0" step="0.01" placeholder="例：2.35">
+        <div class="hint">固定一個數；隨市況自由填</div>
+      </div>
+      <div class="field">
         <label>行政費 / 手續費（每年 %）</label>
         <input id="feepct" type="number" value="0" min="0" step="0.01">
         <div class="hint">每年收，按貸款額計</div>
@@ -191,9 +201,10 @@
       </div>
     </div>
 
-    <!-- 逐年利率 -->
-    <div class="rate-section">
-      <label>貸款年利率（%）· 第 1–20 年逐年填，<b>留空跟上一年</b>（例：第1年填 2，2–5 年留空跟 2；第6年填 6…），第 21 年起一格</label>
+    <!-- 逐年利率（可選爆開） -->
+    <button type="button" id="rateToggle" class="rate-toggle">＋ 指定某啲年份不同利率</button>
+    <div class="rate-section" id="rateSection" style="display:none">
+      <label>逐年利率（%）· 第 1–20 年，<b>留空＝跟返上面固定利率／上一年</b>。淨係填要改嗰幾年（例：第6年填 6、第9年填 9…），第 21 年起一格。</label>
       <div class="rate-grid" id="rateGrid"></div>
     </div>
   </div>
@@ -233,17 +244,18 @@
     <table>
       <thead>
         <tr class="grp-row">
-          <th rowspan="2">保單<br>年度<small>(歲)</small></th>
-          <th colspan="3" class="grp-self">全額自付（本金買細保單）</th>
+          <th rowspan="2">保單<br>周年</th>
+          <th colspan="4" class="grp-self">全額自付（本金買細保單）</th>
           <th colspan="4" class="grp-fin">保費融資（同本金撬大保單）</th>
         </tr>
         <tr>
+          <th class="col-self">總投入<small>本金（扣優惠）</small></th>
           <th class="col-self">落袋<small>退保價值</small></th>
-          <th class="col-self">淨賺<small>落袋 − 本金</small></th>
+          <th class="col-self">淨賺<small>落袋 − 投入</small></th>
           <th class="col-self">IRR</th>
-          <th>累計支出<small>息 + 行政費</small></th>
+          <th class="col-fin">總投入<small>本金+利息費−優惠</small></th>
           <th class="col-fin">落袋<small>退保價值 − 貸款</small></th>
-          <th class="col-fin">淨賺<small>落袋−本金−支出+優惠</small></th>
+          <th class="col-fin">淨賺<small>落袋 − 投入</small></th>
           <th class="col-fin">IRR<small>對本金</small></th>
         </tr>
       </thead>
@@ -252,8 +264,8 @@
   </div>
 
   <div class="note">
-    <b>公平基準：兩案投入同一筆本金（＝首期金額）。</b>自付：本金買一張同等大細嘅保單；融資：同一筆本金當首期，撬起 N 倍保單。<b>左灰＝自付，右藍＝融資。</b>「落袋」＝ 該年贖回實收（自付＝細保單退保價值；融資＝大保單退保價值減還清貸款）。「淨賺」＝ 落袋減本金（融資再扣逐年利息＋行政費、加回首年優惠）。<b>IRR</b> ＝ 按本金現金流計嘅年化內部回報率：融資撬大保單故回報放大，但要付利息——<b>當利率升到某水平，融資 IRR 會跌穿自付，即「唔抵做」</b>（睇上圖藍線何時跌穿灰線）。<br>
-    <b>假設：</b>利息及行政費每年期末支付、行政費按貸款額計、貸款本金維持不變、退保價值與保費成正比、利率全期不變、首年優惠於首年一次性回贈。實際融資需視乎銀行批核、利率浮動及保單表現，數字僅供演示參考，並非保證回報，亦非建議書。
+    <b>公平基準：兩案投入同一筆本金（＝首期金額）。</b>自付：本金買一張同等大細嘅保單；融資：同一筆本金當首期，撬起 N 倍保單。<b>左灰＝自付，右藍＝融資，每邊都係：總投入 → 落袋 → 淨賺 → IRR。</b>「總投入」＝ 客戶累計掏出嘅錢（自付＝本金扣優惠；融資＝本金＋逐年利息＋行政費−優惠）。「落袋」＝ 該保單周年贖回實收（融資已扣還清貸款）。「淨賺」＝ 落袋 − 總投入。<b>IRR</b> ＝ 按本金現金流計嘅年化內部回報率：融資撬大保單故回報放大，但要付利息——<b>當利率升到某水平，融資 IRR 會跌穿自付，即「唔抵做」</b>（睇上圖藍線何時跌穿灰線）。<br>
+    <b>假設：</b>利息及行政費每保單周年期末支付、行政費按貸款額計、貸款本金維持不變、退保價值與保費成正比、首年優惠於首年一次性回贈。實際融資需視乎銀行批核、利率浮動及保單表現，數字僅供演示參考，並非保證回報，亦非建議書。
   </div>
 </div>
 
@@ -324,7 +336,7 @@ function drawChart(series, beYear){
   win.forEach(d=>{ [d.self,d.fin].forEach(v=>{ if(isFinite(v)) maxV=Math.max(maxV,v*100); }); });
   const yMax=Math.max(6, Math.ceil((maxV+1)/2)*2);
   const yMin=0;
-  const gstep = yMax<=8?2:(yMax<=16?4:5);
+  const gstep = yMax<=12?1:(yMax<=24?2:5);   // 細到 1% 一格
   const xAt=yr=> x0 + (yr-1)/(MAXYR-1)*(x1-x0);     // 線性時間軸
   const yAt=v=>{ const c=Math.max(yMin,Math.min(yMax,v)); return y0 + (yMax-c)/(yMax-yMin)*(y1-y0); };
   let s='';
@@ -339,7 +351,7 @@ function drawChart(series, beYear){
     s+='<text x="'+(bx+5)+'" y="'+(y0+13)+'" font-size="11" fill="#00a838">融資回本 第'+beYear+'年</text>';
   }
   [1,5,10,15,20,25,30].forEach(yr=>{ s+='<text x="'+xAt(yr)+'" y="'+(y1+18)+'" text-anchor="middle" font-size="11" fill="#9aa6b8">'+yr+'</text>'; });
-  s+='<text x="'+((x0+x1)/2)+'" y="'+(y1+36)+'" text-anchor="middle" font-size="11" fill="#9aa6b8">保單年度（首 30 年）</text>';
+  s+='<text x="'+((x0+x1)/2)+'" y="'+(y1+36)+'" text-anchor="middle" font-size="11" fill="#9aa6b8">保單周年（首 30）</text>';
   function line(key,color,w){
     let path='', started=false, dots='';
     win.forEach(d=>{ const v=d[key]; if(isFinite(v)){ const X=xAt(d.year),Y=yAt(v*100); path+=(started?'L':'M')+X+' '+Y+' '; started=true; dots+='<circle cx="'+X+'" cy="'+Y+'" r="2.6" fill="'+color+'"/>'; } });
@@ -365,8 +377,11 @@ function setupChartHover(){
     let best=null, bd=1e9;
     CHART_GEO.points.forEach(p=>{ const d=Math.abs(p.xv-vbX); if(d<bd){bd=d;best=p;} });
     if(!best) return;
-    const age=35+best.year;
-    tip.innerHTML='<b>第 '+best.year+' 年（'+age+'歲）</b><br><span class="ts">自付</span> '+pctTxt(best.self)+'<br><span class="tf">融資</span> '+pctTxt(best.fin);
+    const rows=[{cls:'ts',name:'自付',v:best.self},{cls:'tf',name:'融資',v:best.fin}];
+    rows.sort((a,b)=>(isFinite(b.v)?b.v:-1e9)-(isFinite(a.v)?a.v:-1e9));  // IRR 高者在上，對應圖上位置
+    let html='<b>保單周年 '+best.year+'</b>';
+    rows.forEach(rw=> html+='<div class="row '+rw.cls+'"><i></i>'+rw.name+' '+pctTxt(rw.v)+'</div>');
+    tip.innerHTML=html;
     tip.style.left=(best.xv/CHART_GEO.VBW*rect.width)+'px';
     tip.style.top =(Math.min(best.ysv,best.yfv)/CHART_GEO.VBH*rect.height)+'px';
     tip.style.display='block';
@@ -381,14 +396,14 @@ function buildRateGrid(){
   const g=document.getElementById('rateGrid');
   let h='';
   for(let y=1;y<=RATE_YEARS;y++){
-    h+='<div class="rcell"><span>第'+y+'年</span><input id="ry'+y+'" type="number" min="0" step="0.01" '+(y===1?'value="2"':'placeholder="↳"')+'></div>';
+    h+='<div class="rcell"><span>第'+y+'周年</span><input id="ry'+y+'" type="number" min="0" step="0.01" placeholder="↳"></div>';
   }
-  h+='<div class="rcell rest"><span>第'+(RATE_YEARS+1)+'年起</span><input id="rateRest" type="number" min="0" step="0.01" placeholder="↳"></div>';
+  h+='<div class="rcell rest"><span>第'+(RATE_YEARS+1)+'周年起</span><input id="rateRest" type="number" min="0" step="0.01" placeholder="↳"></div>';
   g.innerHTML=h;
   g.querySelectorAll('input').forEach(el=>el.addEventListener('input',calc));
 }
-function getRates(){            // 逐年利率（留空跟上一年）+ 前綴和
-  let last=0.02;
+function getRates(){            // 固定利率做底，逐年格留空跟上一年；輸出前綴和
+  let last = (+document.getElementById('rate').value)/100 || 0;
   const arr=new Array(MAXY+1).fill(0);
   for(let y=1;y<=RATE_YEARS;y++){
     const el=document.getElementById('ry'+y), v=el?el.value:'';
@@ -450,7 +465,6 @@ function calc(){
     if(isMile) tr.className='milestone';
     if(breakevenYear===y) tr.classList.add('breakeven');
 
-    const age = MILESTONE_AGES[y] || (35+y);
     const profCls = netProfit>=0 ? 'pos' : 'neg';
     // 全額自付（同樣本金 down，買一張 down 大細嘅保單；首年優惠減低本金）
     const selfSV     = sv * dpct;                  // 自付保單退保價值（細保單）
@@ -461,14 +475,16 @@ function calc(){
 
     series.push({year:y, self:selfIRR, fin:r});
 
+    const finCost = down + cumCost - rebateFin;    // 融資總投入（本金+利息行政費−優惠）
     tr.innerHTML =
-      '<td>'+y+'<span class="age">'+age+'歲</span></td>'+
+      '<td>'+y+'</td>'+
       // 全額自付（本金買細保單）
+      '<td class="col-self">'+fmt(selfCap)+'</td>'+
       '<td class="col-self">'+fmt(selfSV)+'</td>'+
       '<td class="col-self '+selfPCls+'">'+(selfProfit>=0?'+':'')+fmt(selfProfit)+'</td>'+
       '<td class="col-self">'+irrCellHtml(selfIRR)+'</td>'+
       // 保費融資（同本金撬大保單）
-      '<td class="muted">'+fmt(cumCost)+'</td>'+
+      '<td class="col-fin">'+fmt(finCost)+'</td>'+
       '<td class="col-fin">'+fmt(netAfterLoan)+'</td>'+
       '<td class="col-fin '+profCls+'">'+(netProfit>=0?'+':'')+fmt(netProfit)+'</td>'+
       '<td class="col-fin">'+irrCellHtml(r)+'</td>';
@@ -498,7 +514,15 @@ document.querySelectorAll('#dpQuick button').forEach(b=>{
     calc();
   });
 });
-['face','dpct','feepct','rebateSelf','rebateFin'].forEach(id=>{
+// 利率「爆開指定年份」toggle
+document.getElementById('rateToggle').addEventListener('click',()=>{
+  const sec=document.getElementById('rateSection'), btn=document.getElementById('rateToggle');
+  const open = sec.style.display==='none';
+  sec.style.display = open ? 'block' : 'none';
+  btn.textContent = open ? '－ 收起逐年利率（用回固定）' : '＋ 指定某啲年份不同利率';
+  if(!open){ document.querySelectorAll('#rateGrid input').forEach(el=>el.value=''); calc(); }  // 收起即清空，回到固定利率
+});
+['face','dpct','rate','feepct','rebateSelf','rebateFin'].forEach(id=>{
   document.getElementById(id).addEventListener('input',()=>{
     if(id==='dpct') document.querySelectorAll('#dpQuick button').forEach(x=>x.classList.toggle('on',x.dataset.v===document.getElementById('dpct').value));
     if(id==='face') document.querySelectorAll('#faceQuick button').forEach(x=>x.classList.toggle('on',x.dataset.v===document.getElementById('face').value));
